@@ -77,6 +77,36 @@ async function claimPool(){await call('claim_pool');await loadPool();await loadA
 async function saveSettings(){await call('admin_update_settings',{p_deadline:$('#deadline').value?new Date($('#deadline').value).toISOString():null,p_locked:$('#poolLocked').value==='true',p_season_complete:$('#seasonComplete').value==='true'});await loadPool();await loadAdmin();toast('Settings saved')}
 async function savePlayers(){const names=[...document.querySelectorAll('[data-player-name]')].map(el=>el.value.trim());if(adminState.players.some(p=>p.has_token)&&!confirm('This will rotate all four private invitation links. Only do this before anyone submits; old links will stop working. Continue?'))return;const tokens=adminState.players.map(()=>randomToken());const result=await call('admin_set_players',{p_players:names.map((name,i)=>({name,token:tokens[i]}))});await loadAdmin();for(const inv of (result.invites||[])){const p=adminState.players.find(x=>x.player_order===inv.player_order);if(p)p.invite_url=location.origin+location.pathname+'?invite='+encodeURIComponent(inv.token)}renderInviteFields();$('#inviteStatus').textContent='Links are shown only when generated. Copy and send each link privately now. The database stores token hashes, not recoverable invitation links. If links are lost, regenerate them before anyone submits.';show('#inviteStatus');toast('Players saved; copy the links now')}
 
+function renderInviteFields(){
+  if(!adminState)return;
+
+  $('#inviteFields').innerHTML = adminState.players.map((p,i)=>`
+    <div class="invite-row">
+      <input data-player-name="${i}" maxlength="40"
+        value="${esc(p.name)}" aria-label="Player ${i+1} name">
+      <input data-player-link="${i}"
+        value="${esc(p.invite_url||'')}" readonly
+        placeholder="Save names to generate a private link">
+      <button class="btn" data-copy-player="${i}"
+        ${p.invite_url?'':'disabled'}>Copy link</button>
+    </div>
+    <div class="small">
+      Player ${i+1}: ${p.submitted?'Submitted':'Not submitted'}
+      ${p.submitted_at?' · '+new Date(p.submitted_at).toLocaleString():''}
+    </div>
+  `).join('');
+
+  document.querySelectorAll('[data-copy-player]').forEach(b=>
+    b.addEventListener('click',async()=>{
+      const link=$(`[data-player-link="${b.dataset.copyPlayer}"]`).value;
+      if(link){
+        await navigator.clipboard.writeText(link);
+        toast('Invitation link copied');
+      }
+    })
+  );
+}
+
 async function loadSubmissionStatus(){
   const box = $('#submissionStatus');
 

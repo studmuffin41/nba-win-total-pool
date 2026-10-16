@@ -10,9 +10,73 @@
 <body><main class="wrap">
 <header class="top"><div><div class="eyebrow">Private pool · 2026–27 season</div><h1>🏀 NBA Win Total Pool</h1><p class="sub">Private entries, hidden picks until everyone submits, then a shared leaderboard. The organizer controls deadlines, locks, win lines, and current records.</p></div><div class="actions"><button class="btn" id="refreshBtn">Refresh</button><button class="btn" id="copyUrlBtn">Copy this page URL</button></div></header>
 <div id="configWarning" class="notice warn hidden"></div><div id="notice" class="notice">Connect to the pool to get started.</div>
-<section id="entryPanel" class="panel hidden"><div class="panelhead"><div><h2 id="entryTitle">Your picks</h2><div class="hint" id="entryHint">Make an Over/Under selection for every team.</div></div><div class="tools"><span id="entryCount" class="small"></span><button class="btn primary" id="submitPicksBtn">Submit final picks</button></div></div><div class="tablewrap"><table><thead><tr><th>Team</th><th>Preseason line</th><th>Your pick</th></tr></thead><tbody id="entryTeams"></tbody></table></div><p class="foot">Submitting locks your entry. You cannot change it afterward. Picks remain hidden until all four players submit or the organizer unlocks the reveal.</p></section>
+<section id="entryPanel" class="panel hidden"><div class="panelhead"><div><h2 id="entryTitle">Your picks</h2><div class="hint" id="entryHint">Make an Over/Under selection for every team.</div></div><div class="tools"><span id="entryCount" class="small"></span><button class="btn primary" id="submitPicksBtn">Submit final picks</button></div></div><div class="tablewrap"><table><thead><tr><th>Team</th><th>Preseason line</th><th>Your pick</th></tr></thead><tbody id="entryTeams">
+</tbody></table></div>
+
+<div id="tiebreakerSection" style="margin:20px 0;padding:18px;border:1px solid #475569;border-radius:12px">
+  <h3>Tiebreaker — Combined Team Wins</h3>
+  <p class="hint">
+    Predict the combined final regular-season wins of the
+    Utah Jazz, Dallas Mavericks, and Cleveland Cavaliers.
+  </p>
+
+  <label for="tiebreakerPrediction">
+    Your combined wins prediction
+  </label>
+
+  <input
+    id="tiebreakerPrediction"
+    type="number"
+    min="0"
+    max="246"
+    step="1"
+    placeholder="Example: 125"
+    style="display:block;margin-top:8px;max-width:220px"
+  >
+
+  <p class="small">
+    Your prediction will lock when you submit your picks.
+  </p>
+</div>
+
+<p class="foot">
+Submitting locks your entry. You cannot change it afterward. Picks remain hidden until all four players submit or the organizer unlocks the reveal.</p></section>
 <section id="dashboardPanel" class="hidden"><div class="stats"><div class="stat"><div class="label">Teams tracked</div><div class="value" id="teamCount">30</div></div><div class="stat"><div class="label">Submitted entries</div><div class="value" id="submittedCount">0 / 4</div></div><div class="stat"><div class="label">Team totals decided</div><div class="value" id="decidedCount">0 / 30</div></div><div class="stat"><div class="label">Pool leader</div><div class="value" id="leaderName">Hidden</div></div></div>
 <section class="panel"><div class="panelhead"><div><h2>Leaderboard</h2><div class="hint" id="leaderHint">Picks are private until everyone submits.</div></div><button class="btn" id="exportResultsBtn">Export results CSV</button></div><div class="tablewrap"><table class="leader-table"><thead><tr><th>Rank</th><th>Player</th><th>Correct</th><th>Incorrect</th><th>Pending</th><th>Accuracy</th><th>Progress</th></tr></thead><tbody id="leaderboard"></tbody></table></div><p class="foot">Accuracy excludes pending and push outcomes. A pick is decided once current wins are above or below its preseason line; exact-line outcomes are pushes.</p></section>
+<section class="panel" id="tiebreakerPanel" style="display:none">
+  <div class="panelhead">
+    <div>
+      <h2>Tiebreaker Predictions</h2>
+      <div class="hint">
+        Combined regular-season wins:
+        Utah Jazz + Dallas Mavericks + Cleveland Cavaliers
+      </div>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table class="leader-table">
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Predicted Wins</th>
+        </tr>
+      </thead>
+      <tbody id="tiebreakerLeaderboard"></tbody>
+    </table>
+<p class="foot" id="tiebreakerActualWins">
+  Actual combined wins: Pending until season ends
+</p>
+
+  </div>
+
+  <p class="foot">
+    If players finish tied in the main standings,
+    the prediction closest to the three teams'
+    actual combined wins wins the tiebreaker.
+  </p>
+</section>
+
 <section class="panel"><div class="panelhead"><div><h2>Team lines & current records</h2><div class="hint">The organizer updates current wins. Over is locked once a team exceeds its line; Under/Push settle when the organizer marks the regular season complete.</div></div><span id="seasonState" class="status pending">Loading</span></div><div class="tablewrap"><table><thead><tr><th>Team</th><th>Preseason line</th><th>Current wins</th><th>Result</th><th id="phead0">Player 1</th><th id="phead1">Player 2</th><th id="phead2">Player 3</th><th id="phead3">Player 4</th></tr></thead><tbody id="dashboardTeams"></tbody></table></div></section></section>
 <section id="adminPanel" class="panel hidden"><div class="panelhead"><div><h2>Organizer controls</h2><div class="hint">Organizer sign-in is required for settings, invitation links, records, and reveal controls.</div></div><button class="btn" id="signOutBtn">Sign out</button></div>
 <div id="authArea"><div class="grid2"><div class="field"><label for="adminEmail">Organizer email</label><input id="adminEmail" type="email" autocomplete="username" placeholder="you@example.com"></div><div class="field"><label for="adminPassword">Password</label><input id="adminPassword" type="password" autocomplete="current-password" placeholder="Supabase Auth password"></div></div><div class="actions" style="margin-top:10px"><button class="btn primary" id="signInBtn">Sign in</button><button class="btn" id="signUpBtn">Create organizer account</button></div><p class="foot">Create the organizer account with the same email you use in Supabase Auth. Confirm your email if your Supabase project requires it.</p></div>
@@ -46,9 +110,94 @@ async function call(name,args={}){const {data,error}=await sb.rpc(name,args);if(
 async function boot(){if(!validConfig()){show('#configWarning');$('#configWarning').textContent='Setup required: open index.html in a text editor and replace SUPABASE_URL and SUPABASE_ANON_KEY with your project values. Then run the SQL in supabase-schema.sql.';showNotice('The shared pool is not connected until Supabase is configured.');return}sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});const {data}=await sb.auth.getSession();session=data.session;sb.auth.onAuthStateChange((_event,s)=>{session=s;renderAuth();loadAdmin().catch(e=>console.warn(e))});try{await loadPool();if(entryToken)await loadEntry();if(session)await loadAdmin();startRefresh();}catch(e){showNotice('Could not load the pool: '+e.message,'warn');console.error(e)}renderAuth()}
 async function loadPool(){pool=await call('get_pool_public');if(!pool)throw Error('No pool configuration returned. Run the SQL setup first.');teams=pool.teams||[];players=pool.players||[];renderDashboard()}
 async function loadEntry(){try{myEntry=await call('get_my_entry',{p_token:entryToken});show('#entryPanel');renderEntry()}catch(e){show('#entryPanel',false);showNotice('This invitation link is invalid, expired, or not available: '+e.message,'warn')}}
-function renderEntry(){if(!myEntry)return;$('#entryTitle').textContent=`${myEntry.player_name} — your entry`;const submitted=!!myEntry.submitted_at;$('#entryHint').textContent=submitted?'Your picks have been submitted and locked.':`Choose Over or Under for all ${teams.length} teams.`;$('#entryCount').textContent=`${(myEntry.picks||[]).filter(p=>p.pick).length} / ${teams.length} selected`;$('#submitPicksBtn').disabled=submitted||!pool.accepting_submissions;$('#submitPicksBtn').textContent=submitted?'Entry submitted':pool.accepting_submissions?'Submit final picks':'Submissions locked';$('#entryTeams').innerHTML=teams.map(t=>{const p=(myEntry.picks||[]).find(x=>x.team_id===t.id)?.pick||'';return`<tr><td class="team">${esc(t.name)}<span class="conf">${esc(t.abbr)} · ${esc(t.conference)}</span></td><td>${esc(t.line)}</td><td><select class="pick" data-entry-team="${t.id}" ${submitted||!pool.accepting_submissions?'disabled':''}><option value="">Choose…</option><option value="over" ${p==='over'?'selected':''}>Over</option><option value="under" ${p==='under'?'selected':''}>Under</option></select></td></tr>`}).join('');document.querySelectorAll('[data-entry-team]').forEach(el=>el.addEventListener('change',()=>{const id=el.dataset.entryTeam;let p=(myEntry.picks||[]).filter(x=>x.team_id!==id);if(el.value)p.push({team_id:id,pick:el.value});myEntry.picks=p;$('#entryCount').textContent=`${p.length} / ${teams.length} selected`}))}
-async function submitEntry(){if(!entryToken||!myEntry)return;const picks=[...document.querySelectorAll('[data-entry-team]')].map(el=>({team_id:el.dataset.entryTeam,pick:el.value}));if(picks.length!==30||picks.some(p=>!p.pick)){alert('Please make an Over/Under pick for all 30 teams before submitting.');return}if(!confirm('Submit and lock your picks? You will not be able to change them afterward.'))return;try{await call('submit_my_picks',{p_token:entryToken,p_picks:picks});toast('Picks submitted');await loadPool();await loadEntry();if(pool.revealed)await loadPool()}catch(e){alert('Could not submit: '+e.message)}}
-function renderDashboard(){if(!pool)return;show('#dashboardPanel',true);$('#teamCount').textContent=teams.length;$('#submittedCount').textContent=`${pool.submitted_count||0} / 4` ;$('#decidedCount').textContent=`${teams.filter(t=>outcome(t)!=='pending').length} / ${teams.length}`;$('#seasonState').textContent=pool.locked?'Locked':pool.accepting_submissions?'Open':'Deadline passed';$('#seasonState').className='status '+(pool.accepting_submissions?'over':'pending');$('#leaderHint').textContent=pool.revealed?'All picks are revealed. Scores update as team records are updated.':'Picks are private until all four players submit.';$('#leaderName').textContent=pool.revealed?(pool.leader_name||'Tied'):'Hidden';const reveal=pool.revealed;const rows=reveal?(pool.leaderboard||[]):[];$('#leaderboard').innerHTML=reveal?rows.map((s,i)=>`<tr><td><span class="rank">${i+1}</span></td><td><strong>${esc(s.player_name)}</strong></td><td class="correct">${s.correct}</td><td class="incorrect">${s.incorrect}</td><td class="pending">${s.pending}</td><td>${s.accuracy}%</td><td><div class="bar"><span style="width:${Math.max(0,Math.min(100,s.correct/30*100))}%"></span></div></td></tr>`).join(''):'<tr><td colspan="7">Leaderboard and other players’ picks will appear after all four entries are submitted.</td></tr>';
+function renderEntry(){if(!myEntry)return;$('#entryTitle').textContent=`${myEntry.player_name} — your entry`;const submitted=!!myEntry.submitted_at;$('#entryHint').textContent=submitted?'Your picks have been submitted and locked.':`Choose Over or Under for all ${teams.length} teams.`;$('#entryCount').textContent=`${(myEntry.picks||[]).filter(p=>p.pick).length} / ${teams.length} selected`;$('#submitPicksBtn').disabled=submitted||!pool.accepting_submissions;
+                       
+const tiebreakerInput = $('#tiebreakerPrediction');
+
+if (myEntry.tiebreaker_prediction !== null &&
+    myEntry.tiebreaker_prediction !== undefined) {
+  tiebreakerInput.value = myEntry.tiebreaker_prediction;
+}
+
+                       $('#tiebreakerPrediction').disabled = submitted || !pool.accepting_submissions;$('#submitPicksBtn').textContent=submitted?'Entry submitted':pool.accepting_submissions?'Submit final picks':'Submissions locked';$('#entryTeams').innerHTML=teams.map(t=>{const p=(myEntry.picks||[]).find(x=>x.team_id===t.id)?.pick||'';return`<tr><td class="team">${esc(t.name)}<span class="conf">${esc(t.abbr)} · ${esc(t.conference)}</span></td><td>${esc(t.line)}</td><td><select class="pick" data-entry-team="${t.id}" ${submitted||!pool.accepting_submissions?'disabled':''}><option value="">Choose…</option><option value="over" ${p==='over'?'selected':''}>Over</option><option value="under" ${p==='under'?'selected':''}>Under</option></select></td></tr>`}).join('');document.querySelectorAll('[data-entry-team]').forEach(el=>el.addEventListener('change',()=>{const id=el.dataset.entryTeam;let p=(myEntry.picks||[]).filter(x=>x.team_id!==id);if(el.value)p.push({team_id:id,pick:el.value});myEntry.picks=p;$('#entryCount').textContent=`${p.length} / ${teams.length} selected`}))}
+
+async function submitEntry(){
+  if(!entryToken || !myEntry) return;
+
+  const picks = [...document.querySelectorAll('[data-entry-team]')]
+    .map(el => ({
+      team_id: el.dataset.entryTeam,
+      pick: el.value
+    }));
+
+  if(picks.length !== 30 || picks.some(p => !p.pick)){
+    alert('Please make an Over/Under pick for all 30 teams before submitting.');
+    return;
+  }
+
+  const input = document.querySelector('#tiebreakerPrediction');
+  const value = input.value.trim();
+  const tiebreaker = Number(value);
+
+  if(value === '' || !Number.isInteger(tiebreaker) ||
+     tiebreaker < 0 || tiebreaker > 246){
+    alert('Enter a whole-number tiebreaker prediction between 0 and 246.');
+    input.focus();
+    return;
+  }
+
+  if(!confirm(
+    `Submit and lock your 30 picks and tiebreaker prediction of ${tiebreaker} combined wins? You cannot change them afterward.`
+  )) return;
+
+  try {
+    await call('submit_my_picks', {
+      p_token: entryToken,
+      p_picks: picks,
+      p_tiebreaker: tiebreaker
+    });
+
+    toast('Picks and tiebreaker submitted');
+    await loadPool();
+    await loadEntry();
+
+    if(pool.revealed) await loadPool();
+  } catch(e){
+    alert('Could not submit: ' + e.message);
+  }
+}
+
+function renderDashboard(){if(!pool)return;show('#dashboardPanel',true);$('#teamCount').textContent=teams.length;$('#submittedCount').textContent=`${pool.submitted_count||0} / 4` ;$('#decidedCount').textContent=`${teams.filter(t=>outcome(t)!=='pending').length} / ${teams.length}`;$('#seasonState').textContent=pool.locked?'Locked':pool.accepting_submissions?'Open':'Deadline passed';$('#seasonState').className='status '+(pool.accepting_submissions?'over':'pending');$('#leaderHint').textContent=pool.revealed?'All picks are revealed. Scores update as team records are updated.':'Picks are private until all four players submit.';$('#leaderName').textContent=pool.revealed?(pool.leader_name||'Tied'):'Hidden';
+
+const actualWins = pool.tiebreaker_actual_wins;
+
+$('#tiebreakerActualWins').textContent =
+  actualWins == null
+    ? 'Actual combined wins: Pending until season ends'
+    : `Actual combined wins: ${actualWins}`;
+
+const tiebreakerPanel = $('#tiebreakerPanel');
+const tiebreakerLeaderboard = $('#tiebreakerLeaderboard');
+
+tiebreakerPanel.style.display = pool.revealed ? '' : 'none';
+
+if (pool.revealed) {
+  tiebreakerLeaderboard.innerHTML = (pool.players || [])
+    .map(player => `
+      <tr>
+        <td><strong>${esc(player.name)}</strong></td>
+        <td>${
+          player.tiebreaker_prediction == null
+            ? 'Not submitted'
+            : player.tiebreaker_prediction
+        }</td>
+      </tr>
+    `)
+    .join('');
+} else {
+  tiebreakerLeaderboard.innerHTML = '';
+}
+const reveal=pool.revealed;const rows=reveal?(pool.leaderboard||[]):[];$('#leaderboard').innerHTML=reveal?rows.map((s,i)=>`<tr><td><span class="rank">${s.rank}</span></td><td><strong>${esc(s.player_name)}</strong></td><td class="correct">${s.correct}</td><td class="incorrect">${s.incorrect}</td><td class="pending">${s.pending}</td><td>${s.accuracy}%</td><td><div class="bar"><span style="width:${Math.max(0,Math.min(100,s.correct/30*100))}%"></span></div></td></tr>`).join(''):'<tr><td colspan="7">Leaderboard and other players’ picks will appear after all four entries are submitted.</td></tr>';
 $('#dashboardTeams').innerHTML=teams.map(t=>{let o=outcome(t);return`<tr><td class="team">${esc(t.name)}<span class="conf">${esc(t.abbr)} · ${esc(t.conference)}</span></td><td>${esc(t.line)}</td><td>${t.current_wins===null?'—':esc(t.current_wins)}</td><td><span class="status ${o}">${o==='pending'?'Pending':o==='push'?'Push':o==='over'?'Over':'Under'}</span></td>${[0,1,2,3].map(i=>{let p=reveal?(t.picks||[]).find(x=>x.player_order===i)?.pick||'':'—';let st=reveal?pickStatus(t,p):'pending';return`<td>${reveal?`<span class="status ${st}">${p?esc(p.toUpperCase()):'No pick'}${p?' · '+(st==='correct'?'Correct':st==='incorrect'?'Incorrect':st==='push'?'Push':'Pending'):''}</span>`:'Hidden'}</td>`}).join('')}</tr>`}).join('');for(let i=0;i<4;i++)$('#phead'+i).textContent=(players[i]?.name||`Player ${i+1}`)+' pick';$('#exportResultsBtn').disabled=!reveal}
 
 function renderAuth(){

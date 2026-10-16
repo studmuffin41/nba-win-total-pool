@@ -63,14 +63,53 @@ function renderAuth(){
   show('#adminControls', !!session);
 }
 
-async function loadAdmin(){if(!sb||!session)return;try{const previousLinks=Object.fromEntries((adminState?.players||[]).filter(p=>p.invite_url).map(p=>[p.player_order,p.invite_url]));adminState=await call('get_admin_state');adminState.players=(adminState.players||[]).map(p=>({...p,invite_url:previousLinks[p.player_order]||''}));isAdmin=!!adminState.is_organizer;show('#claimArea',!!adminState.can_claim);if(!isAdmin){$('#adminControls').querySelectorAll('input,select,button').forEach(el=>{if(el.id!=='claimBtn')el.disabled=true});return}$('#adminControls').querySelectorAll('input,select,button').forEach(el=>el.disabled=false);$('#deadline').value=adminState.deadline?new Date(adminState.deadline).toISOString().slice(0,16):'';$('#poolLocked').value=String(!!adminState.locked);$('#seasonComplete').value=String(!!adminState.season_complete);if (!document.querySelector('#inviteFields input:focus')) renderInviteFields(); renderAdminTeams();}catch(e){console.warn(e)}}
-function renderInviteFields(){if(!adminState)return;$('#inviteFields').innerHTML=adminState.players.map((p,i)=>`<div class="invite-row"><input data-player-name="${i}" maxlength="40" value="${esc(p.name)}" aria-label="Player ${i+1} name"><input data-player-link="${i}" value="${esc(p.invite_url||'') }" readonly placeholder="Save names to generate a private link"><button class="btn" data-copy-player="${i}" ${p.invite_url?'':'disabled'}>Copy link</button></div><div class="small">Player ${i+1}: ${p.submitted?'Submitted':'Not submitted'}${p.submitted_at?' · '+new Date(p.submitted_at).toLocaleString():''}</div>`).join('');document.querySelectorAll('[data-copy-player]').forEach(b=>b.addEventListener('click',async()=>{const link=$(`[data-player-link="${b.dataset.copyPlayer}"]`).value;if(link){await navigator.clipboard.writeText(link);toast('Invitation link copied')}}))}
+async function loadAdmin(){if(!sb||!session)return;try{const previousLinks=Object.fromEntries((adminState?.players||[]).filter(p=>p.invite_url).map(p=>[p.player_order,p.invite_url]));adminState=await call('get_admin_state');adminState.players=(adminState.players||[]).map(p=>({...p,invite_url:previousLinks[p.player_order]||''}));isAdmin=!!adminState.is_organizer;show('#claimArea',!!adminState.can_claim);if(!isAdmin){$('#adminControls').querySelectorAll('input,select,button').forEach(el=>{if(el.id!=='claimBtn')el.disabled=true});return}$('#adminControls').querySelectorAll('input,select,button').forEach(el=>el.disabled=false);$('#deadline').value=adminState.deadline?new Date(adminState.deadline).toISOString().slice(0,16):'';$('#poolLocked').value=String(!!adminState.locked);$('#seasonComplete').value=String(!!adminState.season_complete);if (!document.querySelector('#inviteFields input:focus')) 
+renderInviteFields();
+renderAdminTeams();
+await loadSubmissionStatus();
+}catch(e){
+  console.warn(e);
+}}
+
 function renderAdminTeams(){if(!adminState)return;$('#adminTeams').innerHTML=adminState.teams.map(t=>`<tr><td class="team">${esc(t.name)}<span class="conf">${esc(t.abbr)}</span></td><td><input class="line" type="number" min="0" max="82" step="0.5" data-admin-line="${t.id}" value="${esc(t.line)}"></td><td><input class="wins" type="number" min="0" max="82" step="1" data-admin-wins="${t.id}" value="${t.current_wins===null?'':esc(t.current_wins)}" placeholder="—"></td></tr>`).join('')}
 async function signIn(signup=false){const email=$('#adminEmail').value.trim(),password=$('#adminPassword').value;if(!email||!password){alert('Enter your email and password.');return}const r=signup?await sb.auth.signUp({email,password}):await sb.auth.signInWithPassword({email,password});if(r.error)throw r.error;if(signup&&!r.data.session)alert('Account created. Confirm your email if required, then sign in.');else{session=r.data.session;await loadAdmin();toast(signup?'Account created':'Signed in')}}
 async function claimPool(){await call('claim_pool');await loadPool();await loadAdmin();toast('Pool claimed')}
 async function saveSettings(){await call('admin_update_settings',{p_deadline:$('#deadline').value?new Date($('#deadline').value).toISOString():null,p_locked:$('#poolLocked').value==='true',p_season_complete:$('#seasonComplete').value==='true'});await loadPool();await loadAdmin();toast('Settings saved')}
 async function savePlayers(){const names=[...document.querySelectorAll('[data-player-name]')].map(el=>el.value.trim());if(adminState.players.some(p=>p.has_token)&&!confirm('This will rotate all four private invitation links. Only do this before anyone submits; old links will stop working. Continue?'))return;const tokens=adminState.players.map(()=>randomToken());const result=await call('admin_set_players',{p_players:names.map((name,i)=>({name,token:tokens[i]}))});await loadAdmin();for(const inv of (result.invites||[])){const p=adminState.players.find(x=>x.player_order===inv.player_order);if(p)p.invite_url=location.origin+location.pathname+'?invite='+encodeURIComponent(inv.token)}renderInviteFields();$('#inviteStatus').textContent='Links are shown only when generated. Copy and send each link privately now. The database stores token hashes, not recoverable invitation links. If links are lost, regenerate them before anyone submits.';show('#inviteStatus');toast('Players saved; copy the links now')}
-function randomToken(){const b=new Uint8Array(32);crypto.getRandomValues(b);return [...b].map(x=>x.toString(16).padStart(2,'0')).join('')}
+
+async function loadSubmissionStatus(){
+  const box = $('#submissionStatus');
+
+  if (!isAdmin) {
+    box.textContent = 'Organizer access required to view submission status.';
+    return;
+  }
+
+  try {
+    const result = await call('get_admin_submission_status');
+
+    if (!Array.isArray(result) || result.length === 0) {
+      box.textContent = 'No player status information available.';
+      return;
+    }
+
+    box.innerHTML = result.map(player => {
+      const status = player.submitted ? 'Submitted' : 'Not submitted';
+      const time = player.submitted_at
+        ? ' · ' + new Date(player.submitted_at).toLocaleString()
+        : '';
+
+      return `<div style="padding:6px 0">
+        <strong>${esc(player.name)}</strong> — ${status}${time}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.warn('Could not load submission status:', e);
+    box.textContent = 'Unable to load submission status. Please refresh.';
+  }
+}
+
+  function randomToken(){const b=new Uint8Array(32);crypto.getRandomValues(b);return [...b].map(x=>x.toString(16).padStart(2,'0')).join('')}
 async function copyAllLinks(){if(!adminState)return;const txt=adminState.players.map(p=>`${p.name}: ${p.invite_url||'(link not generated)'}`).join('\n');await navigator.clipboard.writeText(txt);toast('Invitation links copied')}
 async function saveRecords(){const rows=adminState.teams.map(t=>({team_id:t.id,line:Number(document.querySelector(`[data-admin-line="${t.id}"]`).value),current_wins:document.querySelector(`[data-admin-wins="${t.id}"]`).value===''?null:Number(document.querySelector(`[data-admin-wins="${t.id}"]`).value)}));if(rows.some(r=>!Number.isFinite(r.line)||r.line<0||r.line>82||(r.current_wins!==null&&(!Number.isInteger(r.current_wins)||r.current_wins<0||r.current_wins>82))))throw Error('Check team lines and wins. Lines must be 0–82; current wins must be whole numbers from 0–82.');await call('admin_update_teams',{p_teams:rows});await loadPool();await loadAdmin();toast('Team records saved')}
 async function revealNow(){if(!confirm('Reveal all submitted picks now? This makes picks visible to all pool visitors.'))return;await call('admin_reveal_now');await loadPool();await loadAdmin();toast('Picks revealed')}

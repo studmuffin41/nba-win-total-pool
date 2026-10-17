@@ -225,7 +225,57 @@ async function signIn(signup=false){const email=$('#adminEmail').value.trim(),pa
 async function claimPool(){await call('claim_pool');await loadPool();await loadAdmin();toast('Pool claimed')}
 async function saveSettings(){await call('admin_update_settings',{p_deadline:$('#deadline').value?new Date($('#deadline').value).toISOString():null,p_locked:$('#poolLocked').value==='true',p_season_complete:$('#seasonComplete').value==='true'});await loadPool();await loadAdmin();toast('Settings saved')}
 async function savePlayers(){const names=[...document.querySelectorAll('[data-player-name]')].map(el=>el.value.trim());if(adminState.players.some(p=>p.has_token)&&!confirm('This will rotate all four private invitation links. Only do this before anyone submits; old links will stop working. Continue?'))return;const tokens=adminState.players.map(()=>randomToken());const result=await call('admin_set_players',{p_players:names.map((name,i)=>({name,token:tokens[i]}))});await loadAdmin();for(const inv of (result.invites||[])){const p=adminState.players.find(x=>x.player_order===inv.player_order);if(p)p.invite_url=location.origin+location.pathname+'?invite='+encodeURIComponent(inv.token)}renderInviteFields();$('#inviteStatus').textContent='Links are shown only when generated. Copy and send each link privately now. The database stores token hashes, not recoverable invitation links. If links are lost, regenerate them before anyone submits.';show('#inviteStatus');toast('Players saved; copy the links now')}
+async function addPlayer() {
+  if (!isAdmin || !adminState) {
+    throw Error('Organizer access required.');
+  }
 
+  const name = prompt('Enter the new player name:');
+  if (name === null) return;
+
+  const playerName = name.trim();
+  if (!playerName) {
+    alert('Please enter a player name.');
+    return;
+  }
+
+  const token = randomToken();
+
+  const result = await call('admin_add_player', {
+    p_name: playerName,
+    p_token: token
+  });
+
+  await loadAdmin();
+  await loadPool();
+
+  const player = adminState.players.find(
+    p => p.player_order === result.player_order
+  );
+
+  const inviteUrl =
+    location.origin +
+    location.pathname +
+    '?invite=' +
+    encodeURIComponent(token);
+
+  if (player) {
+    player.invite_url = inviteUrl;
+  }
+
+  renderInviteFields();
+
+  // Copy the new invitation link immediately.
+  await navigator.clipboard.writeText(inviteUrl);
+
+  $('#inviteStatus').textContent =
+    'New player added! Their private invitation link ' +
+    'has been copied to your clipboard. ' +
+    'Send it privately before adding another player.';
+
+  show('#inviteStatus');
+  toast('Player added — invitation link copied');
+}
 function renderInviteFields(){
   if(!adminState)return;
 

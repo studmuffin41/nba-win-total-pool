@@ -174,7 +174,7 @@ async function submitEntry(){
   }
 }
 
-function renderDashboard(){if(!pool)return;show('#dashboardPanel',true);$('#teamCount').textContent=teams.length;$('#submittedCount').textContent=`${pool.submitted_count||0} / ${players.length}`;$('#decidedCount').textContent=`${teams.filter(t=>outcome(t)!=='pending').length} / ${teams.length}`;$('#seasonState').textContent=pool.locked?'Locked':pool.accepting_submissions?'Open':'Deadline passed';$('#seasonState').className='status '+(pool.accepting_submissions?'over':'pending');$('#leaderHint').textContent=pool.revealed?'All picks are revealed. Scores update as team records are updated.':'Picks are private until all four players submit.';$('#leaderName').textContent=pool.revealed?(pool.leader_name||'Tied'):'Hidden';
+function renderDashboard(){if(!pool)return;show('#dashboardPanel',true);$('#teamCount').textContent=teams.length;$('#submittedCount').textContent=`${pool.submitted_count||0} / ${players.length}`;$('#decidedCount').textContent=`${teams.filter(t=>outcome(t)!=='pending').length} / ${teams.length}`;$('#seasonState').textContent=pool.locked?'Locked':pool.accepting_submissions?'Open':'Deadline passed';$('#seasonState').className='status '+(pool.accepting_submissions?'over':'pending');$('#leaderHint').textContent=pool.revealed?'All picks are revealed. Scores update as team records are updated.':'Picks are private until all registered players submit.';$('#leaderName').textContent=pool.revealed?(pool.leader_name||'Tied'):'Hidden';
 
 const actualWins = pool.tiebreaker_actual_wins;
 

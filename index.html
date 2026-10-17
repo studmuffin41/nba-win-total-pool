@@ -283,7 +283,12 @@ async function addPlayer() {
   renderInviteFields();
 
   // Copy the new invitation link immediately.
+ try {
   await navigator.clipboard.writeText(inviteUrl);
+} catch (error) {
+  console.warn('Clipboard unavailable:', error);
+  prompt('Player added! Copy this private invitation link:', inviteUrl);
+}
 
   $('#inviteStatus').textContent =
     'New player added! Their private invitation link ' +

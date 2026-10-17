@@ -77,7 +77,14 @@ Submitting locks your entry. You cannot change it afterward. Picks remain hidden
   </p>
 </section>
 
-<section class="panel"><div class="panelhead"><div><h2>Team lines & current records</h2><div class="hint">The organizer updates current wins. Over is locked once a team exceeds its line; Under/Push settle when the organizer marks the regular season complete.</div></div><span id="seasonState" class="status pending">Loading</span></div><div class="tablewrap"><table><thead><tr><th>Team</th><th>Preseason line</th><th>Current wins</th><th>Result</th></tr></thead><tbody id="dashboardTeams"></tbody></table></div></section></section>
+<section class="panel"><div class="panelhead"><div><h2>Team lines & current records</h2><div class="hint">The organizer updates current wins. Over is locked once a team exceeds its line; Under/Push settle when the organizer marks the regular season complete.</div></div><span id="seasonState" class="status pending">Loading</span></div><div class="tablewrap"><table><thead>
+  <tr id="dashboardHeader">
+    <th>Team</th>
+    <th>Preseason line</th>
+    <th>Current wins</th>
+    <th>Result</th>
+  </tr>
+</thead><tbody id="dashboardTeams"></tbody></table></div></section></section>
 <section id="adminPanel" class="panel hidden"><div class="panelhead"><div><h2>Organizer controls</h2><div class="hint">Organizer sign-in is required for settings, invitation links, records, and reveal controls.</div></div><button class="btn" id="signOutBtn">Sign out</button></div>
 <div id="authArea"><div class="grid2"><div class="field"><label for="adminEmail">Organizer email</label><input id="adminEmail" type="email" autocomplete="username" placeholder="you@example.com"></div><div class="field"><label for="adminPassword">Password</label><input id="adminPassword" type="password" autocomplete="current-password" placeholder="Supabase Auth password"></div></div><div class="actions" style="margin-top:10px"><button class="btn primary" id="signInBtn">Sign in</button><button class="btn" id="signUpBtn">Create organizer account</button></div><p class="foot">Create the organizer account with the same email you use in Supabase Auth. Confirm your email if your Supabase project requires it.</p></div>
 <div id="adminControls" class="hidden"><div id="claimArea" class="notice warn hidden"><b>Claim this pool</b><p class="small">This pool has not been assigned to an organizer. Claim it using your signed-in account.</p><button class="btn primary" id="claimBtn">Claim pool as organizer</button></div>

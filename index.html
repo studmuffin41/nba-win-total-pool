@@ -337,6 +337,7 @@ function renderInviteFields(){
         placeholder="Save names to generate a private link">
       <button class="btn" data-copy-player="${i}"
         ${p.invite_url?'':'disabled'}>Copy link</button>
+        <button class="btn" data-remove-player="${i}">Remove</button>
     </div>
     <div class="small">
       Player ${i+1}: ${p.submitted?'Submitted':'Not submitted'}

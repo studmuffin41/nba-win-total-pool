@@ -298,6 +298,33 @@ async function addPlayer() {
   show('#inviteStatus');
   toast('Player added — invitation link copied');
 }
+async function resetPlayers() {
+  if (!isAdmin || !adminState) {
+    throw Error('Organizer access required.');
+  }
+
+  const confirmed = prompt(
+    'WARNING: This will permanently delete ALL players ' +
+    'and their picks.\n\n' +
+    'NBA teams, preseason lines, standings, and automation ' +
+    'will remain unchanged.\n\n' +
+    'Type RESET to confirm:'
+  );
+
+  if (confirmed !== 'RESET') {
+    toast('Reset cancelled');
+    return;
+  }
+
+  const result = await call('admin_reset_players');
+
+  await loadAdmin();
+  await loadPool();
+
+  renderInviteFields();
+
+  toast(`${result.players_deleted} players removed successfully`);
+}  
 function renderInviteFields(){
   if(!adminState)return;
 

@@ -372,7 +372,12 @@ function renderInviteFields(){
       ${p.submitted_at?' · '+new Date(p.submitted_at).toLocaleString():''}
     </div>
   `).join('');
-
+  document.querySelectorAll('[data-remove-player]').forEach(button => {
+  button.addEventListener('click', () => {
+    const playerIndex = Number(button.dataset.removePlayer);
+    removePlayer(playerIndex).catch(error => alert(error.message));
+  });
+  });
   document.querySelectorAll('[data-copy-player]').forEach(b=>
     b.addEventListener('click',async()=>{
       const link=$(`[data-player-link="${b.dataset.copyPlayer}"]`).value;

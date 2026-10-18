@@ -325,6 +325,34 @@ async function resetPlayers() {
 
   toast(`${result.players_deleted} players removed successfully`);
 }  
+async function removePlayer(playerIndex) {
+  if (!isAdmin || !adminState) {
+    throw Error('Organizer access required.');
+  }
+
+  const player = adminState.players[playerIndex];
+  if (!player) {
+    throw Error('Player not found.');
+  }
+
+  const confirmed = prompt(
+    `Remove ${player.name} permanently?\n\n` +
+    `Their invitation link and picks will be deleted.\n` +
+    `All other players will remain unchanged.\n\n` +
+    `Type REMOVE to confirm:`
+  );
+
+  if (confirmed !== 'REMOVE') return;
+
+  const result = await call('admin_remove_player', {
+    p_player_id: player.id
+  });
+
+  await loadAdmin();
+  await loadPool();
+
+  toast(`${result.removed_player} removed successfully`);
+}
 function renderInviteFields(){
   if(!adminState)return;
 
